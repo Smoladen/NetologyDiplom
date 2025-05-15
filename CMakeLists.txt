@@ -1,35 +1,39 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.20)
 
 project(CppDiplomProject)
 
-set(PostgreSQL_ADDITIONAL_VERSIONS "16")
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(OPENSSL_ROOT_DIR "C:\\Program Files\\OpenSSL-Win64")
+# Пути
+set(BOOST_ROOT "C:\\Boost")
+set(OPENSSL_ROOT_DIR "C:\\Den\\openssl-3.4.1")
+set(libpqxx_DIR "C:\\Den\\NetologyDiplom\\libpqxx-7.9.2")
 
-set(BOOST_ROOT "C:\\boost_1_87_0")
-
-set(libpqxx_DIR "C:\\Den\\NetologyDiplom\\libpqxx-7.8.1")
-
-add_compile_definitions(_WIN32_WINNT=0x0A01)
-
-# Boost:
+# Найдём зависимости
+find_package(OpenSSL REQUIRED)
 find_package(Boost 1.87.0 REQUIRED COMPONENTS system thread locale)
 
-if(NOT Boost_FOUND)
-    message(FATAL_ERROR "Could not find Boost")
-endif()
+# Подключим libpqxx из исходников
+add_subdirectory(${libpqxx_DIR} libpqxx-build)
 
-# PQXX
-set(PostgreSQL_ADDITIONAL_VERSIONS "15")
+# Цель
+add_executable(crawler 
+    crawler/main.cpp 
+    crawler/crawler.cpp 
+    crawler/crawler.h
+)
 
-add_subdirectory(${libpqxx_DIR} libpqxx-build) 
+# Подключим зависимости
+target_include_directories(crawler PRIVATE 
+    ${Boost_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}/libpqxx-build/include
+)
+
+target_link_libraries(crawler 
+    pqxx
+    OpenSSL::SSL
+    ${Boost_LIBRARIES}
+)
 
 
-# OpenSSL
-find_package(OpenSSL REQUIRED)
-
-
-
-add_subdirectory(crawler)
-
-add_subdirectory(http_server)
